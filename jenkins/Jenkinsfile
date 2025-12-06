@@ -45,7 +45,8 @@ pipeline {
         sh '''
             python3 -V
            pip3 install pytest --break-system-packages
-            pytest tests/ --junitxml=results.xml || true
+           export PATH=$PATH:/home/jenkins/.local/bin
+           pytest tests/ --junitxml=results.xml || true
         '''
     }
     post {
@@ -118,6 +119,7 @@ pipeline {
     }
 
 } // <--- Cierre final del bloque 'pipeline'
+
 
 
 
