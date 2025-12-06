@@ -37,20 +37,36 @@ pipeline {
             agent {
                 docker { 
                     image 'python:3.10-slim'
-                    label 'docker-agent'
+                    
                 } 
             }
-            steps {
-               sh 'pip install --user pytest' 
-               sh 'pytest tests/ --junitxml=results.xml || true'
-            }
-            post {
-                always {
-                    junit 'results.xml'
-                }
-            }
+          stage('Run Tests') {
+    agent {
+        docker { 
+            image 'python:3.10-slim'
+        } 
+    }
+    steps {
+        // PASO 1: Instala pytest en una carpeta local del workspace (evitando el error de permisos [Errno 13]).
+        sh 'pip install -t python_libs pytest' 
+        
+        // PASO 2: Ejecuta las pruebas
+        // 🚨 BLOQUE DE EJECUCIÓN CLAVE 🚨
+        sh '''
+            # 1. Agrega el directorio binario de 'pytest' al PATH temporal.
+            export PATH="$PWD/python_libs/bin:$PATH" 
+            
+            # 2. Ejecuta pytest. '|| true' evita que Jenkins marque la etapa como FAIL si hay fallos en las pruebas.
+            pytest tests/ --junitxml=results.xml || true
+        '''
+    }
+    post {
+        always {
+            // PASO 3: Analiza el reporte de pruebas (JUnit Plugin ya instalado).
+            junit 'results.xml'
         }
-
+    }
+}
         stage('SonarQube Analysis') {
             agent {
                 docker { 
@@ -113,6 +129,7 @@ pipeline {
     }
 
 }
+
 
 
 
