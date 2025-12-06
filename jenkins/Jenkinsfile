@@ -37,6 +37,7 @@ pipeline {
             agent {
                 docker { 
                     image 'python:3.10-slim'
+                    label 'docker-agent'
                 } 
             }
             steps {
@@ -112,5 +113,6 @@ pipeline {
     }
 
 }
+
 
 
