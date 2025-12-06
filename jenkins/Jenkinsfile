@@ -35,18 +35,18 @@ pipeline {
         }
 
         stage('Run Tests') {
-            agent { label 'docker-agent' }
-
-            steps {
+    agent {
+        docker {
+            image 'python:3.10-slim'
+            args '-u 0 -v /var/run/docker.sock:/var/run/docker.sock'
+        }
+    }
+    steps {
         sh '''
-            docker run --rm \
-            -v $PWD:/app \
-            -w /app \
-            python:3.10-slim \
-            sh -c "pip install pytest && pytest tests/ --junitxml=results.xml"
+            pip install pytest
+            pytest tests/ --junitxml=results.xml
         '''
     }
-
     post {
         always {
             junit 'results.xml'
@@ -118,6 +118,7 @@ pipeline {
     }
 
 } // <--- Cierre final del bloque 'pipeline'
+
 
 
 
