@@ -29,7 +29,7 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t mi-app:latest -f jenkins/agents/remoting/Dockerfile.jenkins-agent .'
+                sh 'docker build -t mi-app:latest -f jenkins/agents/Dockerfile.jenkins-agent .'
             }
         }
 
@@ -113,3 +113,4 @@ pipeline {
     }
 
 }
+
