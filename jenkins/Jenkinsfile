@@ -29,10 +29,7 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh '''
-                docker build -t mi-app:latest .
-                docker images
-                '''
+                sh 'docker build -t mi-app:latest -f jenkins/agents/remoting/Dockerfile.jenkins-agent .'
             }
         }
 
@@ -114,4 +111,5 @@ pipeline {
         success { echo "Pipeline completado con éxito" }
         failure { echo "Pipeline falló" }
     }
+
 }
