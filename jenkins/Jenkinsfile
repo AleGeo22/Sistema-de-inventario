@@ -38,7 +38,7 @@ pipeline {
     agent {
         docker {
             image 'mi-app:latest'
-            args '-u 0 -v /var/run/docker.sock:/var/run/docker.sock'
+            label 'docker-agent'
         }
     }
     steps {
@@ -118,6 +118,7 @@ pipeline {
     }
 
 } // <--- Cierre final del bloque 'pipeline'
+
 
 
 
