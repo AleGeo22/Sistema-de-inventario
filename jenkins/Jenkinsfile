@@ -1,0 +1,117 @@
+pipeline {
+    agent { label 'docker-agent' }
+
+    options {
+        disableConcurrentBuilds()
+        buildDiscarder(logRotator(daysToKeepStr: '10'))
+    }
+
+    triggers {
+        cron('H 0 * * *') 
+        pollSCM('H/15 * * * *') 
+    }
+
+    stages {
+        stage('Inicio & Verificación de Herramientas') {
+            agent {
+                docker { 
+                    image 'node:20-slim'
+                    label 'docker-agent' // CORRECCIÓN
+                    args '-u 0'
+                } 
+            }
+            steps {
+                echo "Iniciando pipeline en contenedor temporal..."
+                sh 'node -v'
+                sh 'npm install -g pytest'
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                sh '''
+                docker build -t mi-app:latest .
+                docker images
+                '''
+            }
+        }
+
+        stage('Run Tests') {
+            agent {
+                docker { 
+                    image 'python:3.10-slim'
+                    label 'docker-agent' // CORRECCIÓN
+                } 
+            }
+            steps {
+                sh 'pip install pytest'
+                sh 'pytest tests/ --junitxml=results.xml || true'
+            }
+            post {
+                always {
+                    junit 'results.xml'
+                }
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            agent {
+                docker { 
+                    image 'sonarsource/sonar-scanner-cli'
+                    label 'docker-agent' // CORRECCIÓN
+                }
+            }
+            steps {
+                withCredentials([string(credentialsId: 'sqa-token-id', variable: 'SQ_TOKEN')]) {
+                    sh """
+                    sonar-scanner \
+                        -Dsonar.projectKey=mi-proyecto \
+                        -Dsonar.sources=. \
+                        -Dsonar.host.url=http://mi-sonarqube:9000 \
+                        -Dsonar.login=${SQ_TOKEN}
+                    """
+                }
+            }
+        }
+
+        stage('Terraform & Checkov Scan') {
+            agent {
+                docker { 
+                    image 'bridgecrew/checkov:latest'
+                    label 'docker-agent' // CORRECCIÓN
+                } 
+            }
+            steps {
+                withCredentials([aws(credentialsId: 'aws-creds-id', variable: 'AWS_CREDENTIALS')]) {
+                    sh """
+                    echo "Ejecutando Checkov..."
+                    checkov -d ./terraform --compact
+
+                    echo "Ejecutando Terraform..."
+                    terraform init
+                    terraform plan -out=tfplan
+                    """
+                }
+            }
+        }
+
+        stage('Terraform Apply') {
+            agent {
+                docker { 
+                    image 'bridgecrew/checkov:latest'
+                    label 'docker-agent' // CORRECCIÓN
+                } 
+            }
+            steps {
+                withCredentials([aws(credentialsId: 'aws-creds-id', variable: 'AWS_CREDENTIALS')]) {
+                    sh 'terraform apply -auto-approve tfplan'
+                }
+            }
+        }
+    }
+
+    post {
+        success { echo "Pipeline completado con éxito" }
+        failure { echo "Pipeline falló" }
+    }
+}
