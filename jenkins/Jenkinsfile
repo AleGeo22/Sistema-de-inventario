@@ -44,7 +44,7 @@ pipeline {
     steps {
         sh '''
             python3 -V
-            pip3 install pytest
+           pip3 install pytest --break-system-packages
             pytest tests/ --junitxml=results.xml || true
         '''
     }
@@ -118,6 +118,7 @@ pipeline {
     }
 
 } // <--- Cierre final del bloque 'pipeline'
+
 
 
 
