@@ -63,7 +63,7 @@ pipeline {
                 }
             }
             steps {
-                withCredentials('MiServidorSonarQube) {
+                withCredentials('MiServidorSonarQube') {
                     sh """
                     sonar-scanner \\
                         -Dsonar.projectKey=mi-proyecto \\
@@ -120,6 +120,7 @@ pipeline {
     }
 
 } // <--- Cierre final del bloque 'pipeline'
+
 
 
 
