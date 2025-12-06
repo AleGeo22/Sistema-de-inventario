@@ -43,6 +43,7 @@ pipeline {
     }
     steps {
         sh '''
+            ls -l
             python3 -V
            pip3 install pytest --break-system-packages
            export PATH=$PATH:/home/jenkins/.local/bin
@@ -119,6 +120,7 @@ pipeline {
     }
 
 } // <--- Cierre final del bloque 'pipeline'
+
 
 
 
