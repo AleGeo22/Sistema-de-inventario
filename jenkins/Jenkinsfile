@@ -34,25 +34,23 @@ pipeline {
             }
         }
 
-        stage('Run Tests') {
-    agent {
-        docker {
-            image 'python:3.10-slim'
-            args '-u 0 -v /var/run/docker.sock:/var/run/docker.sock'
-        }
-    }
+       stage('Run Tests') {
+    agent { label 'docker' }
+
     steps {
         sh '''
             pip install pytest
             pytest tests/ --junitxml=results.xml
         '''
     }
+
     post {
         always {
             junit 'results.xml'
         }
     }
 }
+
         stage('SonarQube Analysis') {
             agent {
                 docker { 
@@ -118,6 +116,7 @@ pipeline {
     }
 
 } // <--- Cierre final del bloque 'pipeline'
+
 
 
 
