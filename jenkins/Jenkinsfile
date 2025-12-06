@@ -34,18 +34,16 @@ pipeline {
             }
         }
 
-      stage('Run Tests') {
-    agent {
-        docker {
-            image 'python:3.10-slim'
-            args '-u root'
-        }
-    }
+        stage('Run Tests') {
+            agent { label 'docker-agent' }
 
-    steps {
+            steps {
         sh '''
-            pip install pytest
-            pytest tests/ --junitxml=results.xml || true
+            docker run --rm \
+            -v $PWD:/app \
+            -w /app \
+            python:3.10-slim \
+            sh -c "pip install pytest && pytest tests/ --junitxml=results.xml"
         '''
     }
 
@@ -120,5 +118,6 @@ pipeline {
     }
 
 } // <--- Cierre final del bloque 'pipeline'
+
 
 
