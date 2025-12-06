@@ -1,5 +1,5 @@
 pipeline {
-    agent { label 'docker-agent' }
+    agent { label 'docker-agent' } // Agente por defecto para todo
 
     options {
         disableConcurrentBuilds()
@@ -16,14 +16,15 @@ pipeline {
             agent {
                 docker { 
                     image 'node:20-slim'
-                    label 'docker-agent' // CORRECCIÓN
+                    label 'docker-agent' 
                     args '-u 0'
                 } 
             }
             steps {
                 echo "Iniciando pipeline en contenedor temporal..."
                 sh 'node -v'
-                sh 'npm install -g pytest'
+                // Nota: npm install -g pytest instala el paquete npm, no la librería python
+                sh 'npm install -g pytest' 
             }
         }
 
@@ -37,51 +38,44 @@ pipeline {
             agent {
                 docker { 
                     image 'python:3.10-slim'
-                    
                 } 
             }
-          stage('Run Tests') {
-    agent {
-        docker { 
-            image 'python:3.10-slim'
-        } 
-    }
-    steps {
-        // PASO 1: Instala pytest en una carpeta local del workspace (evitando el error de permisos [Errno 13]).
-        sh 'pip install -t python_libs pytest' 
-        
-        // PASO 2: Ejecuta las pruebas
-        // 🚨 BLOQUE DE EJECUCIÓN CLAVE 🚨
-        sh '''
-            # 1. Agrega el directorio binario de 'pytest' al PATH temporal.
-            export PATH="$PWD/python_libs/bin:$PATH" 
-            
-            # 2. Ejecuta pytest. '|| true' evita que Jenkins marque la etapa como FAIL si hay fallos en las pruebas.
-            pytest tests/ --junitxml=results.xml || true
-        '''
-    }
-    post {
-        always {
-            // PASO 3: Analiza el reporte de pruebas (JUnit Plugin ya instalado).
-            junit 'results.xml'
-        }
-    }
-}
+            steps {
+                // PASO 1: Instala pytest en una carpeta local del workspace (soluciona el error de permisos).
+                sh 'pip install -t python_libs pytest' 
+                
+                // PASO 2: Ejecuta las pruebas
+                sh '''
+                    # 1. Agrega el directorio binario de 'pytest' al PATH temporal.
+                    export PATH="$PWD/python_libs/bin:$PATH" 
+                    
+                    # 2. Ejecuta pytest. '|| true' para analizar resultados en post.
+                    pytest tests/ --junitxml=results.xml || true
+                '''
+            }
+            post {
+                always {
+                    // PASO 3: Analiza el reporte de pruebas.
+                    junit 'results.xml'
+                }
+            }
+        } // <--- Cierre correcto de la etapa 'Run Tests'
+
         stage('SonarQube Analysis') {
             agent {
                 docker { 
                     image 'sonarsource/sonar-scanner-cli'
-                    label 'docker-agent' // CORRECCIÓN
+                    label 'docker-agent' 
                 }
             }
             steps {
                 withCredentials([string(credentialsId: 'sqa-token-id', variable: 'SQ_TOKEN')]) {
                     sh """
-                    sonar-scanner \
-                        -Dsonar.projectKey=mi-proyecto \
-                        -Dsonar.sources=. \
-                        -Dsonar.host.url=http://mi-sonarqube:9000 \
-                        -Dsonar.login=${SQ_TOKEN}
+                    sonar-scanner \\
+                        -Dsonar.projectKey=mi-proyecto \\
+                        -Dsonar.sources=. \\
+                        -Dsonar.host.url=http://mi-sonarqube:9000 \\
+                        -Dsonar.login=\${SQ_TOKEN}
                     """
                 }
             }
@@ -91,16 +85,19 @@ pipeline {
             agent {
                 docker { 
                     image 'bridgecrew/checkov:latest'
-                    label 'docker-agent' // CORRECCIÓN
+                    label 'docker-agent' 
                 } 
             }
             steps {
                 withCredentials([aws(credentialsId: 'aws-creds-id', variable: 'AWS_CREDENTIALS')]) {
                     sh """
                     echo "Ejecutando Checkov..."
+                    # Nota: checkov no está instalado en esta imagen base (bridgecrew/checkov)
+                    # La imagen de bridgecrew/checkov ya incluye checkov.
                     checkov -d ./terraform --compact
 
                     echo "Ejecutando Terraform..."
+                    # Checkov incluye Terraform, se usa el mismo agente
                     terraform init
                     terraform plan -out=tfplan
                     """
@@ -112,7 +109,7 @@ pipeline {
             agent {
                 docker { 
                     image 'bridgecrew/checkov:latest'
-                    label 'docker-agent' // CORRECCIÓN
+                    label 'docker-agent' 
                 } 
             }
             steps {
@@ -121,15 +118,11 @@ pipeline {
                 }
             }
         }
-    }
+    } // <--- Cierre del bloque 'stages'
 
     post {
         success { echo "Pipeline completado con éxito" }
         failure { echo "Pipeline falló" }
     }
 
-}
-
-
-
-
+} // <--- Cierre final del bloque 'pipeline'
