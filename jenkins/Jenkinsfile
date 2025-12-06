@@ -37,12 +37,11 @@ pipeline {
             agent {
                 docker { 
                     image 'python:3.10-slim'
-                    label 'docker-agent' // CORRECCIÓN
                 } 
             }
             steps {
-                sh 'pip install pytest'
-                sh 'pytest tests/ --junitxml=results.xml || true'
+               sh 'pip install --user pytest' 
+               sh 'pytest tests/ --junitxml=results.xml || true'
             }
             post {
                 always {
@@ -113,4 +112,5 @@ pipeline {
     }
 
 }
+
 
