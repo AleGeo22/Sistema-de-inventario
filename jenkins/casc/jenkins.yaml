@@ -1,0 +1,23 @@
+jenkins:
+  systemMessage: "Configuración cargada por JCasC"
+
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+        - id: "admin"
+          password: "admin"
+
+  authorizationStrategy:
+    loggedInUsersCanDoAnything:
+      allowAnonymousRead: false
+
+  agents:
+    - permanent:
+        name: "docker-agent"
+        remoteFS: "/home/jenkins/agent"
+        numExecutors: 1
+        labels: "docker"
+        launcher:
+          inbound:
+            webSocket: true

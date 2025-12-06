@@ -1,0 +1,8 @@
+plugins:
+  required:
+    - instance-identity
+    - configuration-as-code
+    - workflow-aggregator
+    - docker-plugin
+    - credentials
+    - git

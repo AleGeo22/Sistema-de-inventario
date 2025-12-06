@@ -1,0 +1,35 @@
+version: "3.9"
+
+volumes:
+  jenkins_home:
+
+services:
+  jenkins:
+    image: jenkins/jenkins:2.540
+    container_name: jenkins
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    environment:
+      - JAVA_OPTS=-Djenkins.install.runSetupWizard=false
+      - CASC_JENKINS_CONFIG=/var/jenkins_home/casc/jenkins.yaml
+    volumes:
+      - ./casc:/var/jenkins_home/casc
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock  # <-- Permite usar Docker del host
+
+  agent:
+    image: jenkins-agent-custom:latest
+    container_name: jenkins-agent
+    depends_on:
+      - jenkins
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock  # <-- Permite ejecutar Docker desde el agente
+      - jenkins_home:/home/jenkins/agent          # <-- Workspace persistente
+    command: >
+      java -jar /usr/share/jenkins/agent.jar
+      -url http://jenkins:8080/
+      -secret f13943ab62a6b2a4635117d94719099e975c3ec0fa8509a3e6c0bc67b14b0397
+      -name docker-agent
+      -workDir /home/jenkins/agent
+      -webSocket

@@ -1,0 +1,57 @@
+# -------------------------
+# 1. Imagen Base (LTS y Recomendada)
+# -------------------------
+FROM jenkins/inbound-agent:latest
+
+# Cambia a root para instalar herramientas
+USER root
+
+# -------------------------
+# 2. Instalación de Dependencias Esenciales y DOCKER CLI OFICIAL
+# -------------------------
+# Instalar dependencias comunes
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    wget \
+    unzip \
+    curl \
+    lsb-release \
+    gnupg \
+    apt-transport-https && \
+    rm -rf /var/lib/apt/lists/*
+
+# Agregar la clave GPG oficial de Docker e instalar el cliente CLI
+RUN curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+    
+RUN echo \
+    "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian \
+    $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+# Instalar SÓLO el cliente CLI (docker-ce-cli)
+RUN apt-get update && apt-get install -y docker-ce-cli && \
+    rm -rf /var/lib/apt/lists/*
+# -------------------------
+
+
+# -------------------------
+# 3. Instalar SonarScanner (SIN CAMBIOS)
+# -------------------------
+RUN wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip && \
+    unzip sonar-scanner-cli-5.0.1.3006-linux.zip -d /opt && \
+    mv /opt/sonar-scanner-* /opt/sonar-scanner && \
+    ln -s /opt/sonar-scanner/bin/sonar-scanner /usr/local/bin/sonar-scanner && \
+    rm sonar-scanner-cli-5.0.1.3006-linux.zip
+
+# -------------------------
+# 4. Habilitar acceso a Docker (SIN CAMBIOS)
+# -------------------------
+RUN usermod -aG root jenkins
+
+# -------------------------
+# 5. Volver al usuario jenkins y definir las variables de conexión fijas (SIN CAMBIOS)
+# -------------------------
+USER jenkins
+
+ENV JENKINS_URL="http://host.docker.internal:8080/"
+ENV JENKINS_AGENT_NAME="docker-agent"
+ENV JENKINS_AGENT_WORKDIR="/home/jenkins/agent"
