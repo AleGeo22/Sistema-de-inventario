@@ -34,34 +34,27 @@ pipeline {
             }
         }
 
-        stage('Run Tests') {
-            agent {
-                docker { 
-                    image 'python:3.10-slim'
-                    label 'docker-agent'
-                } 
-            }
-            steps {
-                // PASO 1: Instala pytest en una carpeta local del workspace (soluciona el error de permisos).
-                sh 'pip install -t python_libs pytest' 
-                
-                // PASO 2: Ejecuta las pruebas
-                sh '''
-                    # 1. Agrega el directorio binario de 'pytest' al PATH temporal.
-                    export PATH="$PWD/python_libs/bin:$PATH" 
-                    
-                    # 2. Ejecuta pytest. '|| true' para analizar resultados en post.
-                    pytest tests/ --junitxml=results.xml || true
-                '''
-            }
-            post {
-                always {
-                    // PASO 3: Analiza el reporte de pruebas.
-                    junit 'results.xml'
-                }
-            }
-        } // <--- Cierre correcto de la etapa 'Run Tests'
+      stage('Run Tests') {
+    agent {
+        docker {
+            image 'python:3.10-slim'
+            args '-u root'
+        }
+    }
 
+    steps {
+        sh '''
+            pip install pytest
+            pytest tests/ --junitxml=results.xml || true
+        '''
+    }
+
+    post {
+        always {
+            junit 'results.xml'
+        }
+    }
+}
         stage('SonarQube Analysis') {
             agent {
                 docker { 
@@ -127,4 +120,5 @@ pipeline {
     }
 
 } // <--- Cierre final del bloque 'pipeline'
+
 
