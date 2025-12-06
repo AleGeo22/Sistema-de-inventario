@@ -17,7 +17,9 @@ RUN apt-get update && \
     curl \
     lsb-release \
     gnupg \
-    apt-transport-https && \
+    apt-transport-https \
+    python3 \
+    python3-pip && \
     rm -rf /var/lib/apt/lists/*
 
 # Agregar la clave GPG oficial de Docker e instalar el cliente CLI
@@ -54,4 +56,5 @@ USER jenkins
 
 ENV JENKINS_URL="http://host.docker.internal:8080/"
 ENV JENKINS_AGENT_NAME="docker-agent"
+
 ENV JENKINS_AGENT_WORKDIR="/home/jenkins/agent"
