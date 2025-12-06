@@ -47,7 +47,7 @@ pipeline {
             python3 -V
            pip3 install pytest --break-system-packages
            export PATH=$PATH:/home/jenkins/.local/bin
-           pytest tests/ --junitxml=results.xml || true
+           pytest . --junitxml=results.xml || true
         '''
     }
     post {
@@ -63,7 +63,7 @@ pipeline {
                 }
             }
             steps {
-                withCredentials([string(credentialsId: 'sqa-token-id', variable: 'SQ_TOKEN')]) {
+                withCredentials('MiServidorSonarQube) {
                     sh """
                     sonar-scanner \\
                         -Dsonar.projectKey=mi-proyecto \\
@@ -120,6 +120,7 @@ pipeline {
     }
 
 } // <--- Cierre final del bloque 'pipeline'
+
 
 
 
