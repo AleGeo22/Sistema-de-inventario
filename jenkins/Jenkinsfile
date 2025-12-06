@@ -34,20 +34,22 @@ pipeline {
             }
         }
 
-       stage('Run Tests') {
-    agent { label 'docker' }
-
+      stage('Run Tests') {
+    agent {
+        docker {
+            image 'mi-app:latest'
+            args '-u 0 -v /var/run/docker.sock:/var/run/docker.sock'
+        }
+    }
     steps {
         sh '''
-            pip install pytest
+            python3 -V
+            pip3 install pytest
             pytest tests/ --junitxml=results.xml
         '''
     }
-
     post {
-        always {
-            junit 'results.xml'
-        }
+        always { junit 'results.xml' }
     }
 }
 
@@ -116,6 +118,7 @@ pipeline {
     }
 
 } // <--- Cierre final del bloque 'pipeline'
+
 
 
 
